@@ -1,0 +1,6 @@
+Implement the complete React application for the Tender Document Package Builder based on the project plan:
+1. Setup a modern, dark-mode glassmorphism design system in index.css with responsive grid, glowing status pills, and accessible typography.
+2. Build the status engine in statusEngine.js following Section 5 status rules (Missing, Expiry date needed, Expired, Not provided, OK) and 1-to-1 matching constraints with duplicate hash checking.
+3. Build the PDF generation pipeline in pdfGenerator.js with pdf-lib creating an English cover page (Section 6.1), sorted document merge (Section 6.2), dynamic footers "<tender_id> | Page X of Y" (Section 6.3/6.4), and bonus Table of Contents index.
+4. Add interactive components: Header with language toggle (EN/BN), TenderBanner with live stats, RequirementsTable with date picker & dropdowns, UploadZone with drag-and-drop & PDF validation, and PackageGeneratorBar with validation blocker alerts.
+5. Include bonus features: Auto-match heuristics, CSV checklist export, and seal/signature PNG modal.
