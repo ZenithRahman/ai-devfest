@@ -1,0 +1,1 @@
+Generate the final verified sample tender package PDF (output/T-2026-0417_Package.pdf) resolving all sample pack problems (expired trade license, duplicate experience certificate, non-PDF company logo, and proper document ordering with page footers) and prepare the project for deployment to Vercel/GitHub Pages.
