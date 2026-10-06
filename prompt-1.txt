@@ -1,0 +1,11 @@
+Hey, I'm participating in the AI DevFest hackathon with a strict 90-minute build time. 
+We've been given a problem statement PDF (AIDevFest-ViveCoding_ProblemStatement.pdf) and a sample-pack folder containing requirements.json and some sample PDFs of a fictional company. 
+
+The task is to build a frontend-only "Tender Document Package Builder" that runs completely in the browser. 
+Can you carefully read the problem statement PDF and inspect the sample-pack files, then create a complete project plan?
+
+Make sure the plan covers:
+1. Every core requirement from the PDF (Tasks 4.1 through 4.9), status engine rules (Section 5), PDF generation & footer rules (Section 6), and optional bonus tasks (Section 7).
+2. What hidden issues/traps are present in the provided sample pack.
+3. A recommendation on which web stack to choose between React and Vanilla JS, given that I want to host it for free on Vercel or GitHub Pages.
+4. A timed step-by-step execution plan for the 90-minute window and a checklist of required submission deliverables (including Git commit rules and output files).
