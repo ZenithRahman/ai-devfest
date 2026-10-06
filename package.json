@@ -10,13 +10,20 @@
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
     "lucide-react": "^0.475.0",
     "pdf-lib": "^1.17.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.29",
+    "tailwindcss": "~3.4.13",
+    "tailwindcss-animate": "^1.0.7",
     "vite": "^6.1.0"
   }
 }

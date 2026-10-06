@@ -1,15 +1,18 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Trash2, Eye, AlertTriangle, CheckCircle, Copy, Layers } from 'lucide-react';
+import { Upload, FileText, Trash2, Eye, AlertTriangle, Copy, Layers } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import { computeFileHash, formatBytes } from '../utils/cryptoUtils';
+import { Card } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { TRANSLATIONS } from '../constants/translations';
 
-export function UploadZone({ 
-  lang, 
-  uploadedFiles, 
-  onFilesAdded, 
-  onFileRemoved, 
-  onPreviewFile 
+export function UploadZone({
+  lang,
+  uploadedFiles,
+  onFilesAdded,
+  onFileRemoved,
+  onPreviewFile
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -27,8 +30,7 @@ export function UploadZone({
 
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
-      
-      // Task 4.2: "If a file is not a PDF, reject it and show a clear message."
+
       const isPdfByName = file.name.toLowerCase().endsWith('.pdf');
       const isPdfByType = file.type === 'application/pdf';
 
@@ -40,17 +42,15 @@ export function UploadZone({
       try {
         const arrayBuffer = await file.arrayBuffer();
         let pageCount = 1;
-        
-        // Count pages safely using pdf-lib
+
         try {
           const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
           pageCount = pdfDoc.getPageCount();
         } catch (pdfErr) {
           console.warn(`Could not parse page count for ${file.name}:`, pdfErr);
-          pageCount = 1; // Fallback
+          pageCount = 1;
         }
 
-        // Task 4.6: Compute SHA-256 hash for duplicate detection
         const hash = await computeFileHash(arrayBuffer);
 
         validNewFiles.push({
@@ -64,7 +64,7 @@ export function UploadZone({
         });
       } catch (err) {
         console.error(`Failed to process file ${file.name}:`, err);
-        rejectedFileNames.push(`${file.name} (Corrupted/Unreadable)`);
+        rejectedFileNames.push(`${file.name} (Corrupted)`);
       }
     }
 
@@ -87,15 +87,6 @@ export function UploadZone({
     handleFiles(e.dataTransfer.files);
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
   // Group files by hash to mark duplicates (Task 4.6)
   const hashCount = {};
   for (const f of uploadedFiles) {
@@ -105,93 +96,64 @@ export function UploadZone({
   }
 
   return (
-    <div className="glass-panel" style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      
+    <Card className="flex h-full flex-col p-5">
+
       {/* Title */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Layers size={18} color="var(--primary)" />
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className={`flex items-center gap-2 text-sm font-bold ${lang === 'bn' ? 'font-bn text-base' : ''}`}>
+          <Layers size={16} />
           <span>{t.uploadPanel.title}</span>
-          <span style={{ 
-            fontSize: '0.78rem', 
-            background: 'rgba(99, 102, 241, 0.15)', 
-            color: 'var(--primary)', 
-            padding: '2px 8px', 
-            borderRadius: '12px' 
-          }}>
-            {uploadedFiles.length}
-          </span>
         </h2>
+        <span className="rounded-full border border-border bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground">
+          {uploadedFiles.length}
+        </span>
       </div>
 
       {/* Dropzone */}
-      <div 
-        className={`dropzone ${isDragging ? 'active' : ''}`}
+      <div
         onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
         onClick={() => fileInputRef.current?.click()}
-        style={{ marginBottom: '16px' }}
+        className={`mb-4 cursor-pointer rounded-lg border border-dashed p-6 text-center transition-all ${
+          isDragging
+            ? 'border-primary bg-accent'
+            : 'border-border bg-muted/40 hover:border-muted-foreground/50 hover:bg-muted/70'
+        }`}
       >
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          multiple 
-          accept=".pdf,application/pdf" 
-          style={{ display: 'none' }}
+        <input
+          type="file"
+          ref={fileInputRef}
+          multiple
+          accept=".pdf,application/pdf"
+          className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
-        <div style={{ 
-          width: '44px', 
-          height: '44px', 
-          borderRadius: '50%', 
-          background: 'rgba(99, 102, 241, 0.1)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          margin: '0 auto 12px auto',
-          color: 'var(--primary)'
-        }}>
-          <Upload size={22} />
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background">
+          <Upload size={18} />
         </div>
-        <p style={{ fontSize: '0.88rem', fontWeight: 600, color: '#f1f5f9', margin: '0 0 4px 0' }}>
-          {isProcessing ? "Processing files..." : t.uploadPanel.dropPrompt}
+        <p className={`mb-1 text-xs font-semibold md:text-sm ${lang === 'bn' ? 'font-bn' : ''}`}>
+          {isProcessing ? 'Processing files...' : t.uploadPanel.dropPrompt}
         </p>
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+        <p className={`text-[11px] text-muted-foreground ${lang === 'bn' ? 'font-bn' : ''}`}>
           {t.uploadPanel.subPrompt}
         </p>
       </div>
 
-      {/* Error / Rejection Message (Task 4.2) */}
+      {/* Error / Non-PDF Alert */}
       {errorMessage && (
-        <div style={{ 
-          background: 'rgba(239, 68, 68, 0.12)', 
-          border: '1px solid rgba(239, 68, 68, 0.3)', 
-          borderRadius: 'var(--radius-md)', 
-          padding: '10px 14px', 
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '10px'
-        }}>
-          <AlertTriangle size={18} color="#f87171" style={{ flexShrink: 0, marginTop: '2px' }} />
-          <div style={{ fontSize: '0.8rem', color: '#fca5a5', lineHeight: 1.4 }}>
+        <div className="mb-4 flex items-start gap-2.5 rounded-md border border-red-500/30 bg-red-500/10 p-3">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-500" />
+          <div className="text-xs leading-relaxed text-red-600 dark:text-red-400">
             {errorMessage}
           </div>
         </div>
       )}
 
       {/* Uploaded Files List */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '520px', paddingRight: '4px' }}>
+      <div className="max-h-[500px] flex-1 space-y-2 overflow-y-auto pr-1">
         {uploadedFiles.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '30px 16px', 
-            color: 'var(--text-dim)', 
-            fontSize: '0.85rem',
-            border: '1px dashed rgba(255, 255, 255, 0.05)',
-            borderRadius: 'var(--radius-md)'
-          }}>
+          <div className={`rounded-lg border border-dashed border-border px-4 py-10 text-center text-xs text-muted-foreground ${lang === 'bn' ? 'font-bn' : ''}`}>
             {t.uploadPanel.noFiles}
           </div>
         ) : (
@@ -199,80 +161,58 @@ export function UploadZone({
             const isDuplicate = hashCount[file.hash] > 1;
 
             return (
-              <div 
+              <div
                 key={file.id}
-                className="glass-panel-subtle"
-                style={{ 
-                  padding: '10px 12px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between',
-                  gap: '10px',
-                  border: isDuplicate ? '1px solid rgba(168, 85, 247, 0.4)' : undefined,
-                  background: isDuplicate ? 'rgba(168, 85, 247, 0.05)' : undefined
-                }}
+                className={`flex items-center justify-between gap-3 rounded-lg border p-2.5 transition-all ${
+                  isDuplicate
+                    ? 'border-purple-500/40 bg-purple-500/5'
+                    : 'border-border bg-muted/40 hover:border-muted-foreground/40'
+                }`}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                  <div style={{ 
-                    width: '32px', 
-                    height: '32px', 
-                    borderRadius: '8px', 
-                    background: 'rgba(99, 102, 241, 0.1)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    color: 'var(--primary)'
-                  }}>
-                    <FileText size={18} />
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-background">
+                    <FileText size={15} />
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ 
-                      fontSize: '0.84rem', 
-                      fontWeight: 600, 
-                      color: '#f8fafc', 
-                      overflow: 'hidden', 
-                      textOverflow: 'ellipsis', 
-                      whiteSpace: 'nowrap',
-                      maxWidth: '180px'
-                    }} title={file.name}>
+                  <div className="min-w-0">
+                    <div className="max-w-[170px] truncate text-xs font-semibold" title={file.name}>
                       {file.name}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                      <span>{file.pageCount} {t.uploadPanel.pages}</span>
+                    <div className="mt-0.5 flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
+                      <span>{file.pageCount} pgs</span>
                       <span>•</span>
                       <span>{formatBytes(file.size)}</span>
                       {isDuplicate && (
                         <>
                           <span>•</span>
-                          <span className="badge badge-duplicate" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
-                            <Copy size={10} />
-                            {t.uploadPanel.duplicateBadge}
-                          </span>
+                          <Badge variant="duplicate" className="px-1.5 py-0 text-[10px]">
+                            <Copy size={9} />
+                            <span>DUP</span>
+                          </Badge>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Actions: Preview & Delete (Task 4.2) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                  <button 
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => onPreviewFile(file)}
-                    className="btn btn-secondary" 
-                    style={{ padding: '6px', borderRadius: '6px' }}
+                    className="h-7 w-7"
                     title={t.uploadPanel.preview}
                   >
-                    <Eye size={14} />
-                  </button>
-                  <button 
+                    <Eye size={13} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => onFileRemoved(file.id)}
-                    className="btn btn-danger-outline" 
-                    style={{ padding: '6px', borderRadius: '6px' }}
+                    className="h-7 w-7 hover:text-red-500"
                     title={t.uploadPanel.remove}
                   >
-                    <Trash2 size={14} />
-                  </button>
+                    <Trash2 size={13} />
+                  </Button>
                 </div>
               </div>
             );
@@ -280,6 +220,6 @@ export function UploadZone({
         )}
       </div>
 
-    </div>
+    </Card>
   );
 }

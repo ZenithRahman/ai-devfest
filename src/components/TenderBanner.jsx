@@ -1,115 +1,91 @@
 import React from 'react';
-import { ShieldCheck, AlertCircle, Calendar, Building2, User, FileText, CheckCircle2 } from 'lucide-react';
+import { FileText, Building2, User, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Card } from './ui/card';
+import { Badge } from './ui/badge';
 import { TRANSLATIONS } from '../constants/translations';
 
 export function TenderBanner({ tender, lang, blockingCount, totalRequirements, okCount }) {
   const t = TRANSLATIONS[lang];
 
   return (
-    <div className="glass-panel" style={{ padding: '20px 24px', marginBottom: '24px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', alignItems: 'center' }}>
-        
+    <Card className="mb-6 p-5">
+      <div className="grid grid-cols-1 items-center gap-5 sm:grid-cols-2 lg:grid-cols-5">
+
         {/* Tender ID & Title */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', marginBottom: '4px' }}>
-            <FileText size={16} />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              {t.tenderId}
-            </span>
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <FileText size={13} />
+            <span>{t.tenderId}</span>
           </div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>
+          <div className="truncate font-mono text-base font-bold tracking-tight">
             {tender.tender_id || 'N/A'}
           </div>
-          <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+          <div className="truncate text-xs text-muted-foreground" title={tender.title}>
             {tender.title}
           </div>
         </div>
 
         {/* Procuring Entity */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-            <Building2 size={16} />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              {t.procuringEntity}
-            </span>
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <Building2 size={13} />
+            <span>{t.procuringEntity}</span>
           </div>
-          <div style={{ fontSize: '0.98rem', fontWeight: 600, color: '#f1f5f9' }}>
+          <div className="truncate text-sm font-semibold">
             {tender.procuring_entity || 'N/A'}
           </div>
         </div>
 
         {/* Bidder */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-            <User size={16} />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              {t.bidder}
-            </span>
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <User size={13} />
+            <span>{t.bidder}</span>
           </div>
-          <div style={{ fontSize: '0.98rem', fontWeight: 600, color: '#f1f5f9' }}>
+          <div className="truncate text-sm font-semibold">
             {tender.bidder || 'N/A'}
           </div>
         </div>
 
         {/* Submission Deadline */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--warning)', marginBottom: '4px' }}>
-            <Calendar size={16} />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              {t.deadline}
-            </span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-amber-600 dark:text-amber-500">
+            <Calendar size={13} />
+            <span>{t.deadline}</span>
           </div>
-          <div style={{ 
-            fontSize: '1.05rem', 
-            fontWeight: 800, 
-            color: '#fbbf24', 
-            fontFamily: 'var(--font-mono)',
-            background: 'rgba(245, 158, 11, 0.1)',
-            padding: '4px 10px',
-            borderRadius: '6px',
-            display: 'inline-block'
-          }}>
+          <div className="inline-block rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 font-mono text-sm font-bold text-amber-700 dark:text-amber-400">
             {tender.submission_deadline || 'N/A'}
           </div>
         </div>
 
         {/* Live Status Badge Summary */}
-        <div style={{ 
-          background: 'rgba(255, 255, 255, 0.03)', 
-          border: '1px solid var(--border-color)', 
-          borderRadius: 'var(--radius-md)', 
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px'
-        }}>
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 p-3">
           <div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+            <div className={`text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${lang === 'bn' ? 'font-bn' : ''}`}>
               {t.statusSummary}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#10b981' }}>{okCount}</span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/ {totalRequirements} OK</span>
+            <div className="mt-0.5 flex items-baseline gap-1">
+              <span className="font-mono text-lg font-bold text-emerald-600 dark:text-emerald-400">{okCount}</span>
+              <span className="font-mono text-xs text-muted-foreground">/ {totalRequirements} OK</span>
             </div>
           </div>
 
           <div>
             {blockingCount > 0 ? (
-              <div className="badge badge-missing pulse-indicator" style={{ padding: '6px 12px' }}>
-                <AlertCircle size={14} />
-                <span>{blockingCount} {t.blockingIssues}</span>
-              </div>
+              <Badge variant="danger" className="animate-pulse py-1 normal-case">
+                <AlertCircle size={12} />
+                <span className={lang === 'bn' ? 'font-bn' : ''}>{blockingCount} {t.blockingIssues}</span>
+              </Badge>
             ) : (
-              <div className="badge badge-ok" style={{ padding: '6px 12px' }}>
-                <CheckCircle2 size={14} />
+              <Badge variant="success" className="py-1 normal-case">
+                <CheckCircle2 size={12} />
                 <span>Ready</span>
-              </div>
+              </Badge>
             )}
           </div>
         </div>
 
       </div>
-    </div>
+    </Card>
   );
 }

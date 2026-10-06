@@ -1,0 +1,1 @@
+Fix the project UI. Update it with shadcn components and Tailwind CSS, use Inter for English and Hind Siliguri for Bangla, and use Vercel dark for dark mode with a light/dark toggle. Also fix the Tailwind v4/v3 mismatch so the build passes.

@@ -1,6 +1,11 @@
 import React from 'react';
-import { CheckCircle2, AlertCircle, Clock, XCircle, MinusCircle, X, Eye } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Clock, XCircle, MinusCircle, X, Eye, FileWarning } from 'lucide-react';
 import { STATUS } from '../utils/statusEngine';
+import { Card } from './ui/card';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Input, Select } from './ui/input';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './ui/table';
 import { TRANSLATIONS } from '../constants/translations';
 
 export function RequirementsTable({
@@ -17,49 +22,54 @@ export function RequirementsTable({
 }) {
   const t = TRANSLATIONS[lang];
 
-  // Helper to render status badge with icon
-  const renderStatusBadge = (statusKey) => {
-    switch (statusKey) {
-      case STATUS.OK:
-        return (
-          <span className="badge badge-ok">
-            <CheckCircle2 size={13} />
-            {t.statuses.OK}
-          </span>
-        );
-      case STATUS.MISSING:
-        return (
-          <span className="badge badge-missing">
-            <XCircle size={13} />
-            {t.statuses.MISSING}
-          </span>
-        );
-      case STATUS.EXPIRY_NEEDED:
-        return (
-          <span className="badge badge-expiry-needed">
-            <Clock size={13} />
-            {t.statuses.EXPIRY_NEEDED}
-          </span>
-        );
-      case STATUS.EXPIRED:
-        return (
-          <span className="badge badge-expired">
-            <AlertCircle size={13} />
-            {t.statuses.EXPIRED}
-          </span>
-        );
-      case STATUS.NOT_PROVIDED:
-      default:
-        return (
-          <span className="badge badge-not-provided">
-            <MinusCircle size={13} />
-            {t.statuses.NOT_PROVIDED}
-          </span>
-        );
-    }
+  const renderStatusBadge = (statusKey, description) => {
+    const badge = (() => {
+      switch (statusKey) {
+        case STATUS.OK:
+          return (
+            <Badge variant="success">
+              <CheckCircle2 size={11} />
+              <span className={lang === 'bn' ? 'font-bn' : ''}>{t.statuses.OK}</span>
+            </Badge>
+          );
+        case STATUS.MISSING:
+          return (
+            <Badge variant="danger">
+              <XCircle size={11} />
+              <span className={lang === 'bn' ? 'font-bn' : ''}>{t.statuses.MISSING}</span>
+            </Badge>
+          );
+        case STATUS.EXPIRY_NEEDED:
+          return (
+            <Badge variant="warning">
+              <Clock size={11} />
+              <span className={lang === 'bn' ? 'font-bn' : ''}>{t.statuses.EXPIRY_NEEDED}</span>
+            </Badge>
+          );
+        case STATUS.EXPIRED:
+          return (
+            <Badge variant="danger">
+              <AlertCircle size={11} />
+              <span className={lang === 'bn' ? 'font-bn' : ''}>{t.statuses.EXPIRED}</span>
+            </Badge>
+          );
+        case STATUS.NOT_PROVIDED:
+        default:
+          return (
+            <Badge variant="secondary">
+              <MinusCircle size={11} />
+              <span className={lang === 'bn' ? 'font-bn' : ''}>{t.statuses.NOT_PROVIDED}</span>
+            </Badge>
+          );
+      }
+    })();
+    return (
+      <span title={description || ''} className="inline-flex">
+        {badge}
+      </span>
+    );
   };
 
-  // Map of fileId -> requirementId currently matched
   const fileToReqMap = {};
   const hashToReqMap = {};
   for (const [rId, fId] of Object.entries(matches)) {
@@ -72,169 +82,148 @@ export function RequirementsTable({
     }
   }
 
-  // Sort requirements strictly by order (Task 4.1)
   const sortedReqs = [...requirements].sort((a, b) => a.order - b.order);
 
+  if (sortedReqs.length === 0) {
+    return (
+      <Card className="flex flex-col items-center gap-2 overflow-hidden p-10 text-center">
+        <FileWarning size={28} className="text-muted-foreground" />
+        <p className="text-sm font-medium">No requirements loaded</p>
+        <p className="max-w-sm text-xs text-muted-foreground">Load a requirements.json file from the header to get started.</p>
+      </Card>
+    );
+  }
+
   return (
-    <div className="glass-panel" style={{ overflow: 'hidden' }}>
-      <div style={{ overflowX: 'auto' }}>
-        <table className="req-table">
-          <thead>
-            <tr>
-              <th style={{ width: '50px' }}>{t.tableHeaders.order}</th>
-              <th style={{ minWidth: '220px' }}>{t.tableHeaders.docTitle}</th>
-              <th style={{ width: '110px' }}>{t.tableHeaders.type}</th>
-              <th style={{ minWidth: '240px' }}>{t.tableHeaders.matchedFile}</th>
-              <th style={{ width: '160px' }}>{t.tableHeaders.expiryDate}</th>
-              <th style={{ width: '160px' }}>{t.tableHeaders.status}</th>
-              <th style={{ width: '80px', textAlign: 'center' }}>{t.tableHeaders.actions}</th>
-            </tr>
-          </thead>
-          <tbody>
+    <Card className="overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-12">{t.tableHeaders.order}</TableHead>
+              <TableHead className={`min-w-[200px] ${lang === 'bn' ? 'font-bn text-xs normal-case' : ''}`}>{t.tableHeaders.docTitle}</TableHead>
+              <TableHead className={`w-24 ${lang === 'bn' ? 'font-bn text-xs normal-case' : ''}`}>{t.tableHeaders.type}</TableHead>
+              <TableHead className={`min-w-[240px] ${lang === 'bn' ? 'font-bn text-xs normal-case' : ''}`}>{t.tableHeaders.matchedFile}</TableHead>
+              <TableHead className={`w-40 ${lang === 'bn' ? 'font-bn text-xs normal-case' : ''}`}>{t.tableHeaders.expiryDate}</TableHead>
+              <TableHead className={`w-40 ${lang === 'bn' ? 'font-bn text-xs normal-case' : ''}`}>{t.tableHeaders.status}</TableHead>
+              <TableHead className="w-16 text-center">{t.tableHeaders.actions}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {sortedReqs.map((req) => {
               const matchedFileId = matches[req.id] || '';
               const matchedFile = uploadedFiles.find(f => f.id === matchedFileId);
               const expiryValue = expiryDates[req.id] || '';
               const statusInfo = itemStatuses[req.id] || { status: STATUS.NOT_PROVIDED };
 
-              // Determine document title by active language (Task 4.9)
               const docTitle = lang === 'bn' ? (req.title_bn || req.title_en) : (req.title_en || req.title_bn);
 
               return (
-                <tr key={req.id}>
-                  {/* Order */}
-                  <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-muted)' }}>
+                <TableRow key={req.id}>
+                  <TableCell className="font-mono text-xs font-semibold text-muted-foreground">
                     {req.order}
-                  </td>
+                  </TableCell>
 
-                  {/* Document Title */}
-                  <td>
-                    <div style={{ 
-                      fontWeight: 600, 
-                      color: '#f8fafc',
-                      fontSize: '0.92rem',
-                      fontFamily: lang === 'bn' ? 'var(--font-bn)' : 'inherit'
-                    }}>
+                  <TableCell>
+                    <div className={`text-sm font-semibold ${lang === 'bn' ? 'font-bn text-base' : ''}`}>
                       {docTitle}
                     </div>
-                    <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px', fontFamily: 'var(--font-mono)' }}>
-                      {req.id} {req.has_expiry ? '• Requires Expiry' : ''}
+                    <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                      {req.id} {req.has_expiry ? '• Expiry Check' : ''}
                     </div>
-                  </td>
+                  </TableCell>
 
-                  {/* Type (Mandatory vs Optional) */}
-                  <td>
-                    <span style={{ 
-                      fontSize: '0.75rem', 
-                      fontWeight: 600,
-                      color: req.mandatory ? '#fca5a5' : '#94a3b8',
-                      background: req.mandatory ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                      padding: '3px 8px',
-                      borderRadius: '4px',
-                      border: req.mandatory ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
+                  <TableCell>
+                    <span className={`rounded border px-2 py-0.5 font-mono text-[11px] ${
+                      req.mandatory
+                        ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400'
+                        : 'border-border bg-muted text-muted-foreground'
+                    } ${lang === 'bn' ? 'font-bn text-xs' : ''}`}>
                       {req.mandatory ? t.types.mandatory : t.types.optional}
                     </span>
-                  </td>
+                  </TableCell>
 
-                  {/* Matched File Dropdown (Task 4.3 & 4.6) */}
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <select 
-                        className="custom-select"
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      <Select
                         value={matchedFileId}
                         onChange={(e) => onMatchChange(req.id, e.target.value)}
-                        style={{
-                          borderColor: matchedFile ? 'var(--border-active)' : undefined
-                        }}
+                        className={`h-8 text-xs ${matchedFile ? 'border-ring font-medium' : 'text-muted-foreground'}`}
                       >
                         <option value="">{t.matching.selectPlaceholder}</option>
                         {uploadedFiles.map((file) => {
                           const isMatchedToOther = fileToReqMap[file.id] && fileToReqMap[file.id] !== req.id;
-                          // Task 4.6: If this file has same content hash as another file matched to a different requirement, disable it!
                           const isDuplicateMatchedElsewhere = hashToReqMap[file.hash] && hashToReqMap[file.hash] !== req.id;
                           const isDisabled = isMatchedToOther || isDuplicateMatchedElsewhere;
 
                           let disabledLabel = '';
-                          if (isMatchedToOther) disabledLabel = ' (Already matched)';
-                          else if (isDuplicateMatchedElsewhere) disabledLabel = ' (Duplicate match prohibited)';
+                          if (isMatchedToOther) disabledLabel = ' (Matched)';
+                          else if (isDuplicateMatchedElsewhere) disabledLabel = ' (Duplicate prohibited)';
 
                           return (
-                            <option 
-                              key={file.id} 
-                              value={file.id} 
-                              disabled={isDisabled}
-                            >
+                            <option key={file.id} value={file.id} disabled={isDisabled}>
                               {file.name} ({file.pageCount} pgs){disabledLabel}
                             </option>
                           );
                         })}
-                      </select>
+                      </Select>
 
                       {matchedFile && (
-                        <button 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => onUnmatch(req.id)}
-                          className="btn btn-secondary" 
-                          style={{ padding: '7px', borderRadius: '6px' }}
+                          className="h-8 w-8 hover:text-red-500"
                           title={t.uploadPanel.unmatch}
                         >
-                          <X size={14} color="#f87171" />
-                        </button>
+                          <X size={14} />
+                        </Button>
                       )}
                     </div>
-                  </td>
+                  </TableCell>
 
-                  {/* Expiry Date Input (Task 4.4) */}
-                  <td>
+                  <TableCell>
                     {req.has_expiry ? (
                       matchedFile ? (
-                        <input 
+                        <Input
                           type="date"
-                          className="custom-input"
                           value={expiryValue}
                           onChange={(e) => onExpiryChange(req.id, e.target.value)}
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            borderColor: !expiryValue ? 'rgba(245, 158, 11, 0.4)' : undefined
-                          }}
+                          className={`h-8 font-mono text-xs ${!expiryValue ? 'border-amber-500/60' : ''}`}
                         />
                       ) : (
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                          Attach file first
-                        </span>
+                        <span className="text-xs italic text-muted-foreground/70">Attach PDF</span>
                       )
                     ) : (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>—</span>
+                      <span className="font-mono text-xs text-muted-foreground/70">—</span>
                     )}
-                  </td>
+                  </TableCell>
 
-                  {/* Status Badge (Task 4.5 & Section 5) */}
-                  <td>
-                    {renderStatusBadge(statusInfo.status)}
-                  </td>
+                  <TableCell>
+                    {renderStatusBadge(statusInfo.status, statusInfo.message || t.statusDescriptions?.[statusInfo.status])}
+                  </TableCell>
 
-                  {/* Actions (Preview) */}
-                  <td style={{ textAlign: 'center' }}>
+                  <TableCell className="text-center">
                     {matchedFile ? (
-                      <button 
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => onPreviewFile(matchedFile)}
-                        className="btn btn-secondary"
-                        style={{ padding: '6px', borderRadius: '6px' }}
+                        className="h-7 w-7"
                         title={t.uploadPanel.preview}
                       >
-                        <Eye size={14} />
-                      </button>
+                        <Eye size={13} />
+                      </Button>
                     ) : (
-                      <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>—</span>
+                      <span className="font-mono text-xs text-muted-foreground/50">—</span>
                     )}
-                  </td>
-
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
-    </div>
+    </Card>
   );
 }

@@ -1,8 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Stamp, Check, Trash2 } from 'lucide-react';
+import { Upload, Stamp, Check, Trash2 } from 'lucide-react';
+import { Button } from './ui/button';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogClose, DialogFooter } from './ui/dialog';
 import { TRANSLATIONS } from '../constants/translations';
 
 export function SealSignatureModal({
+  open,
   lang,
   sealData,
   onSaveSeal,
@@ -51,135 +54,130 @@ export function SealSignatureModal({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div 
-        className="modal-content" 
-        onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '540px', padding: '24px' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Stamp size={22} color="var(--primary)" />
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>
+    <Dialog open={open} onClose={onClose} className="max-w-lg p-6">
+      <DialogHeader className="p-0 pb-2">
+        <div className="flex w-full items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted">
+              <Stamp size={16} />
+            </div>
+            <DialogTitle className={lang === 'bn' ? 'font-bn' : ''}>
               {t.sealModal.title}
-            </h2>
+            </DialogTitle>
           </div>
-          <button onClick={onClose} className="btn btn-secondary" style={{ padding: '6px' }}>
-            <X size={16} />
-          </button>
+          <DialogClose onClose={onClose} />
         </div>
-
-        <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
+        <DialogDescription className={lang === 'bn' ? 'font-bn' : ''}>
           {t.sealModal.description}
-        </p>
+        </DialogDescription>
+      </DialogHeader>
 
-        {/* Upload PNG Button / Drop */}
-        <div 
-          onClick={() => fileInputRef.current?.click()}
-          style={{
-            border: '2px dashed var(--border-color)',
-            borderRadius: 'var(--radius-md)',
-            padding: '24px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            background: 'rgba(255, 255, 255, 0.02)',
-            marginBottom: '20px'
-          }}
-        >
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            accept="image/png" 
-            style={{ display: 'none' }}
-            onChange={handleImageUpload}
-          />
-          {imagePreview ? (
-            <div>
-              <img 
-                src={imagePreview} 
-                alt="Seal Preview" 
-                style={{ maxHeight: '100px', maxWidth: '180px', objectFit: 'contain', marginBottom: '8px' }} 
-              />
-              <div style={{ fontSize: '0.78rem', color: '#34d399', fontWeight: 600 }}>
-                PNG Stamp Loaded (Click to replace)
-              </div>
+      {/* Upload PNG */}
+      <div
+        onClick={() => fileInputRef.current?.click()}
+        className="mb-5 cursor-pointer rounded-lg border border-dashed border-border bg-muted/40 p-6 text-center transition-colors hover:border-muted-foreground/50 hover:bg-muted/70"
+      >
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/png"
+          className="hidden"
+          onChange={handleImageUpload}
+        />
+        {imagePreview ? (
+          <div>
+            <img
+              src={imagePreview}
+              alt="Seal Preview"
+              className="mx-auto mb-2 max-h-24 max-w-[160px] object-contain drop-shadow"
+            />
+            <div className="font-mono text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              PNG Stamp Ready (Click to change)
             </div>
-          ) : (
-            <div>
-              <Upload size={28} color="var(--text-muted)" style={{ margin: '0 auto 8px auto' }} />
-              <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#f1f5f9' }}>
-                {t.sealModal.uploadPrompt}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '4px' }}>
-                Transparent PNG recommended
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Page selection */}
-        <div style={{ marginBottom: '24px' }}>
-          <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
-            {t.sealModal.selectPages}
-          </label>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {[
-              { id: 'all', label: t.sealModal.allPages },
-              { id: 'cover', label: t.sealModal.coverOnly },
-              { id: 'last', label: t.sealModal.lastPage }
-            ].map(opt => (
-              <label 
-                key={opt.id}
-                style={{ 
-                  flex: 1, 
-                  padding: '10px', 
-                  borderRadius: 'var(--radius-md)', 
-                  border: targetPages === opt.id ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                  background: targetPages === opt.id ? 'var(--primary-light)' : 'rgba(255, 255, 255, 0.02)',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  fontSize: '0.8rem',
-                  fontWeight: 600
-                }}
-              >
-                <input 
-                  type="radio" 
-                  name="targetPages" 
-                  value={opt.id} 
-                  checked={targetPages === opt.id}
-                  onChange={(e) => setTargetPages(e.target.value)}
-                  style={{ display: 'none' }}
-                />
-                {opt.label}
-              </label>
-            ))}
           </div>
-        </div>
+        ) : (
+          <div>
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background">
+              <Upload size={18} />
+            </div>
+            <div className={`text-xs font-semibold ${lang === 'bn' ? 'font-bn' : ''}`}>
+              {t.sealModal.uploadPrompt}
+            </div>
+            <div className="mt-1 font-mono text-[11px] text-muted-foreground">
+              Transparent PNG recommended
+            </div>
+          </div>
+        )}
+      </div>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {imagePreview ? (
-            <button 
-              onClick={handleClear}
-              className="btn btn-danger-outline"
+      {/* Target Pages */}
+      <div className="mb-6">
+        <label className={`mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground ${lang === 'bn' ? 'font-bn' : ''}`}>
+          {t.sealModal.selectPages}
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { id: 'all', label: t.sealModal.allPages },
+            { id: 'cover', label: t.sealModal.coverOnly },
+            { id: 'last', label: t.sealModal.lastPage }
+          ].map(opt => (
+            <label
+              key={opt.id}
+              className={`cursor-pointer rounded-md border px-3 py-2 text-center text-xs font-medium transition-all ${
+                targetPages === opt.id
+                  ? 'border-primary bg-primary font-bold text-primary-foreground'
+                  : 'border-border bg-secondary text-muted-foreground hover:border-muted-foreground/50'
+              } ${lang === 'bn' ? 'font-bn' : ''}`}
             >
-              <Trash2 size={15} />
+              <input
+                type="radio"
+                name="targetPages"
+                value={opt.id}
+                checked={targetPages === opt.id}
+                onChange={(e) => setTargetPages(e.target.value)}
+                className="hidden"
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <DialogFooter className="p-0">
+        <div className="flex w-full items-center justify-between gap-2">
+          {imagePreview ? (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleClear}
+              className={lang === 'bn' ? 'font-bn' : ''}
+            >
+              <Trash2 size={13} />
               <span>{t.sealModal.clear}</span>
-            </button>
+            </Button>
           ) : <div />}
 
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={onClose} className="btn btn-secondary">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onClose}
+              className={lang === 'bn' ? 'font-bn' : ''}
+            >
               {t.sealModal.close}
-            </button>
-            <button onClick={handleApply} className="btn btn-primary">
-              <Check size={16} />
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleApply}
+              className={lang === 'bn' ? 'font-bn' : ''}
+            >
+              <Check size={14} />
               <span>{t.sealModal.apply}</span>
-            </button>
+            </Button>
           </div>
         </div>
-
-      </div>
-    </div>
+      </DialogFooter>
+    </Dialog>
   );
 }

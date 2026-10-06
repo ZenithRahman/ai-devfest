@@ -17,6 +17,13 @@ import { exportChecklistToCsv } from './utils/exportUtils';
 
 export default function App() {
   const [lang, setLang] = useState('en');
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('tender_builder_theme') || 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
   const [tender, setTender] = useState(DEFAULT_TENDER_DATA.tender);
   const [requirements, setRequirements] = useState(DEFAULT_TENDER_DATA.requirements);
   
@@ -35,6 +42,14 @@ export default function App() {
   const [previewFile, setPreviewFile] = useState(null);
   const [isSealModalOpen, setIsSealModalOpen] = useState(false);
   const [sealData, setSealData] = useState({ bytes: null, previewUrl: null, targetPages: 'all' });
+
+  // Theme: toggle `dark` class + persist
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    try {
+      localStorage.setItem('tender_builder_theme', theme);
+    } catch {}
+  }, [theme]);
 
   // Auto-load state from localStorage on first mount if available
   useEffect(() => {
@@ -69,7 +84,6 @@ export default function App() {
   }, [tender, requirements, matches, expiryDates, lang]);
 
   // Section 4.5 & 5: Reactive Status Evaluation
-  // Re-evaluates instantly whenever requirements, matches, expiryDates, or uploadedFiles change
   const statusAnalysis = useMemo(() => {
     return evaluateAllStatuses(
       requirements, 
@@ -115,7 +129,6 @@ export default function App() {
   // File removed handler
   const handleFileRemoved = (fileId) => {
     setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
-    // Clear matches associated with this file
     setMatches(prev => {
       const next = { ...prev };
       for (const [reqId, matchedId] of Object.entries(next)) {
@@ -179,7 +192,7 @@ export default function App() {
     );
   };
 
-  // Save full project state as downloadable JSON file
+  // Save project state to JSON
   const handleSaveStateToFile = () => {
     const exportState = {
       version: '1.0',
@@ -201,7 +214,7 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
 
-  // Load project state from JSON file
+  // Load project state from JSON
   const handleLoadStateFromFile = (stateObj) => {
     if (stateObj.tender) setTender(stateObj.tender);
     if (stateObj.requirements) setRequirements(stateObj.requirements);
@@ -210,7 +223,7 @@ export default function App() {
     if (stateObj.lang) setLang(stateObj.lang);
   };
 
-  // Generate & Download Package (Task 4.7 & 4.8 & Section 6)
+  // Generate & Download Package (Task 4.7 & 4.8)
   const handleGeneratePackage = async () => {
     if (!canGenerate || isGenerating) return;
 
@@ -235,20 +248,16 @@ export default function App() {
         }
       );
 
-      // Section 4.8: "The user downloads the package as <tender_id>_Package.pdf"
       const outputFileName = `${tender.tender_id || 'Tender'}_Package.pdf`;
       downloadPdfBlob(pdfBytes, outputFileName);
 
-      // Trigger celebratory confetti!
       try {
         confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.7 }
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.8 }
         });
-      } catch (e) {
-        // Confetti non-critical
-      }
+      } catch (e) {}
 
     } catch (err) {
       console.error('Package generation failed:', err);
@@ -261,58 +270,63 @@ export default function App() {
   };
 
   return (
-    <div className={`app-container ${lang === 'bn' ? 'font-bn' : ''}`}>
-      {/* Header with Navigation and Global Actions */}
-      <Header 
+    <div className={`min-h-screen bg-background text-foreground pb-32 ${lang === 'bn' ? 'font-bn' : ''}`}>
+      {/* Header */}
+      <Header
         lang={lang}
         setLang={setLang}
+        theme={theme}
+        onToggleTheme={() => setTheme((p) => (p === 'dark' ? 'light' : 'dark'))}
         onLoadRequirementsJson={handleLoadRequirementsJson}
         onResetSample={handleResetSample}
         onSaveState={handleSaveStateToFile}
         onLoadState={handleLoadStateFromFile}
       />
 
-      {/* Tender Details Banner */}
-      <TenderBanner 
-        tender={tender}
-        lang={lang}
-        blockingCount={blockingCount}
-        totalRequirements={requirements.length}
-        okCount={okCount}
-      />
+      {/* Main Content Area */}
+      <main className="mx-auto max-w-[1440px] px-4 pt-6 sm:px-6">
+        {/* Tender Banner */}
+        <TenderBanner
+          tender={tender}
+          lang={lang}
+          blockingCount={blockingCount}
+          totalRequirements={requirements.length}
+          okCount={okCount}
+        />
 
-      {/* Main Grid: Checklist Table (Left) + Upload Zone (Right) */}
-      <div className="grid-main">
-        {/* Left: Requirements Checklist Table */}
-        <section>
-          <RequirementsTable 
-            lang={lang}
-            requirements={requirements}
-            matches={matches}
-            expiryDates={expiryDates}
-            uploadedFiles={uploadedFiles}
-            itemStatuses={itemStatuses}
-            onMatchChange={handleMatchChange}
-            onExpiryChange={handleExpiryChange}
-            onUnmatch={handleUnmatch}
-            onPreviewFile={(file) => setPreviewFile(file)}
-          />
-        </section>
+        {/* 2-Column Responsive Layout */}
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
+          {/* Left: Requirements Checklist Table */}
+          <section className="min-w-0">
+            <RequirementsTable
+              lang={lang}
+              requirements={requirements}
+              matches={matches}
+              expiryDates={expiryDates}
+              uploadedFiles={uploadedFiles}
+              itemStatuses={itemStatuses}
+              onMatchChange={handleMatchChange}
+              onExpiryChange={handleExpiryChange}
+              onUnmatch={handleUnmatch}
+              onPreviewFile={(file) => setPreviewFile(file)}
+            />
+          </section>
 
-        {/* Right: File Upload Dropzone & Staged Pool */}
-        <aside>
-          <UploadZone 
-            lang={lang}
-            uploadedFiles={uploadedFiles}
-            onFilesAdded={handleFilesAdded}
-            onFileRemoved={handleFileRemoved}
-            onPreviewFile={(file) => setPreviewFile(file)}
-          />
-        </aside>
-      </div>
+          {/* Right: Upload Zone & Staged Files */}
+          <aside className="lg:sticky lg:top-20">
+            <UploadZone
+              lang={lang}
+              uploadedFiles={uploadedFiles}
+              onFilesAdded={handleFilesAdded}
+              onFileRemoved={handleFileRemoved}
+              onPreviewFile={(file) => setPreviewFile(file)}
+            />
+          </aside>
+        </div>
+      </main>
 
-      {/* Floating Bottom Bar: Validation, Auto-match, Export & Package Generation */}
-      <PackageGeneratorBar 
+      {/* Floating Bottom Action Dock */}
+      <PackageGeneratorBar
         lang={lang}
         blockingCount={blockingCount}
         canGenerate={canGenerate}
@@ -328,23 +342,19 @@ export default function App() {
       />
 
       {/* PDF In-App Preview Modal */}
-      {previewFile && (
-        <PDFPreviewModal 
-          file={previewFile}
-          onClose={() => setPreviewFile(null)}
-        />
-      )}
+      <PDFPreviewModal
+        file={previewFile}
+        onClose={() => setPreviewFile(null)}
+      />
 
       {/* Seal / Signature PNG Modal */}
-      {isSealModalOpen && (
-        <SealSignatureModal 
-          lang={lang}
-          sealData={sealData}
-          onSaveSeal={(data) => setSealData(data)}
-          onClose={() => setIsSealModalOpen(false)}
-        />
-      )}
-
+      <SealSignatureModal
+        open={isSealModalOpen}
+        lang={lang}
+        sealData={sealData}
+        onSaveSeal={(data) => setSealData(data)}
+        onClose={() => setIsSealModalOpen(false)}
+      />
     </div>
   );
 }

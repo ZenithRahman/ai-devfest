@@ -1,14 +1,17 @@
 import React, { useRef } from 'react';
-import { FileText, Globe, UploadCloud, Save, FolderOpen, RefreshCw } from 'lucide-react';
+import { FileText, UploadCloud, Save, FolderOpen, RotateCcw, Sun, Moon } from 'lucide-react';
+import { Button } from './ui/button';
 import { TRANSLATIONS } from '../constants/translations';
 
-export function Header({ 
-  lang, 
-  setLang, 
-  onLoadRequirementsJson, 
-  onResetSample, 
-  onSaveState, 
-  onLoadState 
+export function Header({
+  lang,
+  setLang,
+  theme,
+  onToggleTheme,
+  onLoadRequirementsJson,
+  onResetSample,
+  onSaveState,
+  onLoadState
 }) {
   const jsonInputRef = useRef(null);
   const stateInputRef = useRef(null);
@@ -49,129 +52,120 @@ export function Header({
   };
 
   return (
-    <header className="glass-panel" style={{ padding: '16px 24px', marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-        
+    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl transition-colors">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6">
+
         {/* Brand & Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ 
-            width: '44px', 
-            height: '44px', 
-            borderRadius: '12px', 
-            background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)'
-          }}>
-            <FileText size={24} color="#ffffff" />
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground shadow-sm">
+            <FileText size={18} strokeWidth={2.5} />
           </div>
-          <div>
-            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-              {t.appTitle}
-            </h1>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className={`truncate text-sm font-bold tracking-tight md:text-base ${lang === 'bn' ? 'font-bn' : ''}`}>
+                {t.appTitle}
+              </h1>
+              <span className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted-foreground sm:inline">
+                AI DevFest
+              </span>
+            </div>
+            <p className={`hidden truncate text-xs text-muted-foreground sm:block ${lang === 'bn' ? 'font-bn' : ''}`}>
               {t.appSubtitle}
             </p>
           </div>
         </div>
 
         {/* Global Toolbar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {/* Hidden file inputs */}
-          <input 
-            type="file" 
-            ref={jsonInputRef} 
-            accept=".json,application/json" 
-            style={{ display: 'none' }} 
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <input
+            type="file"
+            ref={jsonInputRef}
+            accept=".json,application/json"
+            className="hidden"
             onChange={handleJsonUpload}
           />
-          <input 
-            type="file" 
-            ref={stateInputRef} 
-            accept=".json" 
-            style={{ display: 'none' }} 
+          <input
+            type="file"
+            ref={stateInputRef}
+            accept=".json"
+            className="hidden"
             onChange={handleStateUpload}
           />
 
-          {/* Load requirements.json */}
-          <button 
-            className="btn btn-secondary" 
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => jsonInputRef.current?.click()}
             title="Upload custom requirements.json"
+            className={lang === 'bn' ? 'font-bn' : ''}
           >
-            <UploadCloud size={16} />
-            <span>{t.loadRequirements}</span>
-          </button>
+            <UploadCloud size={14} />
+            <span className="hidden md:inline">{t.loadRequirements}</span>
+          </Button>
 
-          {/* Load sample tender */}
-          <button 
-            className="btn btn-secondary" 
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onResetSample}
             title="Reset to default sample pack data"
+            className={lang === 'bn' ? 'font-bn' : ''}
           >
-            <RefreshCw size={15} />
-            <span>{t.resetSample}</span>
-          </button>
+            <RotateCcw size={13} />
+            <span className="hidden lg:inline">{t.resetSample}</span>
+          </Button>
 
-          {/* Save / Reopen project */}
-          <button 
-            className="btn btn-secondary" 
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onSaveState}
             title="Save current progress as JSON file"
+            className={`hidden sm:inline-flex ${lang === 'bn' ? 'font-bn' : ''}`}
           >
-            <Save size={15} />
-            <span>{t.saveState}</span>
-          </button>
+            <Save size={13} />
+            <span className="hidden lg:inline">{t.saveState}</span>
+          </Button>
 
-          <button 
-            className="btn btn-secondary" 
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => stateInputRef.current?.click()}
             title="Reopen previously saved project file"
+            className={`hidden sm:inline-flex ${lang === 'bn' ? 'font-bn' : ''}`}
           >
-            <FolderOpen size={15} />
-            <span>{t.loadState}</span>
-          </button>
+            <FolderOpen size={13} />
+            <span className="hidden lg:inline">{t.loadState}</span>
+          </Button>
+
+          {/* Theme toggle */}
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to Vercel dark mode'}
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          </Button>
 
           {/* Language Switcher (Task 4.9) */}
-          <div style={{ 
-            display: 'flex', 
-            background: 'rgba(255, 255, 255, 0.05)', 
-            borderRadius: 'var(--radius-md)',
-            padding: '3px',
-            border: '1px solid var(--border-color)',
-            marginLeft: '6px'
-          }}>
-            <button 
+          <div className="ml-1 flex items-center rounded-md border border-border bg-muted p-0.5">
+            <button
               onClick={() => setLang('en')}
-              style={{
-                border: 'none',
-                background: lang === 'en' ? 'var(--primary)' : 'transparent',
-                color: lang === 'en' ? '#fff' : 'var(--text-muted)',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
+              className={`rounded px-2.5 py-1 text-xs font-semibold transition-all ${
+                lang === 'en'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
               EN
             </button>
-            <button 
+            <button
               onClick={() => setLang('bn')}
-              style={{
-                border: 'none',
-                background: lang === 'bn' ? 'var(--primary)' : 'transparent',
-                color: lang === 'bn' ? '#fff' : 'var(--text-muted)',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-bn)',
-                transition: 'all 0.2s'
-              }}
+              className={`rounded px-2.5 py-1 font-bn text-xs font-semibold transition-all ${
+                lang === 'bn'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
               বাংলা
             </button>

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Download, Sparkles, FileSpreadsheet, Stamp, AlertCircle, CheckCircle2, Loader2, BookOpen } from 'lucide-react';
+import { Button } from './ui/button';
+import { Progress } from './ui/progress';
 import { TRANSLATIONS } from '../constants/translations';
 
 export function PackageGeneratorBar({
@@ -19,150 +21,102 @@ export function PackageGeneratorBar({
   const t = TRANSLATIONS[lang];
 
   return (
-    <div className="bottom-dock">
-      <div style={{ 
-        maxWidth: '1440px', 
-        margin: '0 auto', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        
-        {/* Left: Quick Actions (Auto-match, CSV export, Seal, TOC checkbox) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          
-          <button 
-            className="btn btn-secondary" 
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 px-4 py-3.5 shadow-[0_-10px_30px_rgba(0,0,0,0.15)] backdrop-blur-xl dark:shadow-[0_-10px_30px_rgba(0,0,0,0.8)] sm:px-6">
+      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4">
+
+        {/* Left Tools */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onAutoMatch}
-            title="Auto-match uploaded files by name heuristic"
+            title="Auto-match uploaded files by filename"
+            className={lang === 'bn' ? 'font-bn' : ''}
           >
-            <Sparkles size={16} color="#a855f7" />
+            <Sparkles size={14} className="text-purple-500" />
             <span>{t.matching.autoMatchBtn}</span>
-          </button>
+          </Button>
 
-          <button 
-            className="btn btn-secondary" 
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onExportCsv}
-            title="Export requirements and matching checklist as CSV"
+            title="Export checklist as CSV"
+            className={lang === 'bn' ? 'font-bn' : ''}
           >
-            <FileSpreadsheet size={16} color="#10b981" />
+            <FileSpreadsheet size={14} className="text-emerald-500" />
             <span>{t.packageBar.exportCsvBtn}</span>
-          </button>
+          </Button>
 
-          <button 
-            className="btn btn-secondary" 
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onOpenSealModal}
-            title="Upload and place seal / signature stamp"
+            title="Upload and place seal / stamp"
+            className={lang === 'bn' ? 'font-bn' : ''}
           >
-            <Stamp size={16} color="#f59e0b" />
+            <Stamp size={14} className="text-amber-500" />
             <span>{t.packageBar.sealBtn}</span>
-          </button>
+          </Button>
 
-          {/* Index / Table of Contents toggle */}
-          <label style={{ 
-            display: 'inline-flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            fontSize: '0.84rem', 
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-            userSelect: 'none',
-            marginLeft: '8px'
-          }}>
-            <input 
-              type="checkbox" 
-              checked={includeToc} 
+          {/* Table of contents toggle */}
+          <label className="ml-2 inline-flex cursor-pointer select-none items-center gap-2 text-xs text-muted-foreground hover:text-foreground">
+            <input
+              type="checkbox"
+              checked={includeToc}
               onChange={(e) => setIncludeToc(e.target.checked)}
-              style={{ cursor: 'pointer', accentColor: 'var(--primary)', width: '15px', height: '15px' }}
+              className="h-3.5 w-3.5 cursor-pointer accent-black dark:accent-white"
             />
-            <BookOpen size={15} />
-            <span>{t.tocOption}</span>
+            <BookOpen size={13} />
+            <span className={lang === 'bn' ? 'font-bn' : ''}>{t.tocOption}</span>
           </label>
-
         </div>
 
-        {/* Right: Validation indicator & Main Generate Action */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-          
-          {/* Reason why disabled (Task 4.7: "and show why") */}
+        {/* Right Action & Validation Status */}
+        <div className="flex flex-wrap items-center gap-3.5">
           {!canGenerate ? (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px', 
-              color: '#f87171', 
-              fontSize: '0.82rem',
-              fontWeight: 500
-            }}>
-              <AlertCircle size={15} />
-              <span>
+            <div className="flex items-center gap-1.5 text-xs font-medium text-red-500">
+              <AlertCircle size={14} />
+              <span className={lang === 'bn' ? 'font-bn' : ''}>
                 {t.packageBar.blockingWarning.replace('{count}', blockingCount)}
               </span>
             </div>
           ) : (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px', 
-              color: '#34d399', 
-              fontSize: '0.82rem',
-              fontWeight: 500
-            }}>
-              <CheckCircle2 size={15} />
-              <span>{t.readyToGenerate}</span>
+            <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 size={14} />
+              <span className={lang === 'bn' ? 'font-bn' : ''}>{t.readyToGenerate}</span>
             </div>
           )}
 
-          {/* Generate Button (Task 4.7 & 4.8) */}
-          <button 
-            className="btn btn-primary"
+          <Button
+            variant="default"
+            size="default"
             disabled={!canGenerate || isGenerating}
             onClick={onGeneratePackage}
-            style={{ 
-              padding: '11px 22px', 
-              fontSize: '0.94rem', 
-              letterSpacing: '-0.01em',
-              minWidth: '220px'
-            }}
+            className={`min-w-[210px] font-bold ${lang === 'bn' ? 'font-bn' : ''}`}
           >
             {isGenerating ? (
               <>
-                <Loader2 size={18} className="animate-spin" />
+                <Loader2 size={16} className="animate-spin" />
                 <span>{progressText || t.packageBar.generating}</span>
               </>
             ) : (
               <>
-                <Download size={18} />
+                <Download size={16} strokeWidth={2.5} />
                 <span>{t.packageBar.generateBtn}</span>
               </>
             )}
-          </button>
-
+          </Button>
         </div>
 
       </div>
 
-      {/* Progress Bar when generating */}
+      {/* Progress Bar */}
       {isGenerating && (
-        <div style={{ 
-          maxWidth: '1440px', 
-          margin: '12px auto 0 auto', 
-          background: 'rgba(255, 255, 255, 0.08)', 
-          borderRadius: '4px', 
-          height: '4px',
-          overflow: 'hidden'
-        }}>
-          <div style={{ 
-            width: `${progress}%`, 
-            height: '100%', 
-            background: 'linear-gradient(90deg, var(--primary), var(--accent-cyan))', 
-            transition: 'width 0.3s ease' 
-          }} />
+        <div className="mx-auto mt-3 max-w-[1440px]">
+          <Progress value={progress} />
         </div>
       )}
-
     </div>
   );
 }
