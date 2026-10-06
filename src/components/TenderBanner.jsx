@@ -1,90 +1,67 @@
-import React from 'react';
-import { FileText, Building2, User, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Building2, User, CalendarDays, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
+import { Progress } from './ui/progress';
 import { TRANSLATIONS } from '../constants/translations';
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.round((d - now) / 86400000);
+}
 
 export function TenderBanner({ tender, lang, blockingCount, totalRequirements, okCount }) {
   const t = TRANSLATIONS[lang];
+  const pct = totalRequirements > 0 ? Math.round((okCount / totalRequirements) * 100) : 0;
+
+  const deadline = useMemo(() => {
+    const n = daysUntil(tender.submission_deadline);
+    if (n === null) return { label: tender.submission_deadline || '—', tone: 'text-muted-foreground' };
+    if (n < 0) return { label: t.overdue, tone: 'text-red-600 dark:text-red-400' };
+    if (n === 0) return { label: t.dueToday, tone: 'text-amber-600 dark:text-amber-400' };
+    return { label: t.daysLeft.replace('{count}', n), tone: 'text-muted-foreground' };
+  }, [t, tender.submission_deadline]);
 
   return (
-    <Card className="mb-6 p-5">
-      <div className="grid grid-cols-1 items-center gap-5 sm:grid-cols-2 lg:grid-cols-5">
-
-        {/* Tender ID & Title */}
-        <div className="min-w-0 space-y-1">
-          <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
-            <FileText size={13} />
-            <span>{t.tenderId}</span>
-          </div>
-          <div className="truncate font-mono text-base font-bold tracking-tight">
-            {tender.tender_id || 'N/A'}
-          </div>
-          <div className="truncate text-xs text-muted-foreground" title={tender.title}>
-            {tender.title}
-          </div>
+    <Card className="mb-5 overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3.5">
+        <div className="min-w-0">
+          <p className="truncate font-mono text-[13px] font-semibold tracking-tight">{tender.tender_id || '—'}</p>
+          <p className="truncate text-[13px] text-muted-foreground" title={tender.title}>{tender.title || ''}</p>
         </div>
+        {blockingCount > 0 ? (
+          <Badge variant="danger"><AlertTriangle size={12} />{blockingCount} {t.blockingIssues}</Badge>
+        ) : (
+          <Badge variant="success"><CheckCircle2 size={12} />{t.readyToGenerate}</Badge>
+        )}
+      </div>
 
-        {/* Procuring Entity */}
-        <div className="min-w-0 space-y-1">
-          <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
-            <Building2 size={13} />
-            <span>{t.procuringEntity}</span>
-          </div>
-          <div className="truncate text-sm font-semibold">
-            {tender.procuring_entity || 'N/A'}
-          </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-4 px-5 py-4 lg:grid-cols-4">
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Building2 size={13} />{t.procuringEntity}</p>
+          <p className="mt-1 truncate text-[13px] font-semibold">{tender.procuring_entity || '—'}</p>
         </div>
-
-        {/* Bidder */}
-        <div className="min-w-0 space-y-1">
-          <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground">
-            <User size={13} />
-            <span>{t.bidder}</span>
-          </div>
-          <div className="truncate text-sm font-semibold">
-            {tender.bidder || 'N/A'}
-          </div>
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><User size={13} />{t.bidder}</p>
+          <p className="mt-1 truncate text-[13px] font-semibold">{tender.bidder || '—'}</p>
         </div>
-
-        {/* Submission Deadline */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-amber-600 dark:text-amber-500">
-            <Calendar size={13} />
-            <span>{t.deadline}</span>
-          </div>
-          <div className="inline-block rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 font-mono text-sm font-bold text-amber-700 dark:text-amber-400">
-            {tender.submission_deadline || 'N/A'}
-          </div>
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><CalendarDays size={13} />{t.deadline}</p>
+          <p className="mt-1 font-mono text-[13px] font-semibold">{tender.submission_deadline || '—'}</p>
+          <p className={`text-xs ${deadline.tone}`}>{deadline.label}</p>
         </div>
-
-        {/* Live Status Badge Summary */}
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 p-3">
-          <div>
-            <div className={`text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${lang === 'bn' ? 'font-bn' : ''}`}>
-              {t.statusSummary}
-            </div>
-            <div className="mt-0.5 flex items-baseline gap-1">
-              <span className="font-mono text-lg font-bold text-emerald-600 dark:text-emerald-400">{okCount}</span>
-              <span className="font-mono text-xs text-muted-foreground">/ {totalRequirements} OK</span>
-            </div>
+        <div className="col-span-2 min-w-0 lg:col-span-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-xs text-muted-foreground">{t.statusSummary}</p>
+            <p className="font-mono text-xs text-muted-foreground tabular-nums">{okCount}/{totalRequirements}</p>
           </div>
-
-          <div>
-            {blockingCount > 0 ? (
-              <Badge variant="danger" className="animate-pulse py-1 normal-case">
-                <AlertCircle size={12} />
-                <span className={lang === 'bn' ? 'font-bn' : ''}>{blockingCount} {t.blockingIssues}</span>
-              </Badge>
-            ) : (
-              <Badge variant="success" className="py-1 normal-case">
-                <CheckCircle2 size={12} />
-                <span>Ready</span>
-              </Badge>
-            )}
-          </div>
+          <Progress value={pct} className="mt-2 h-1.5" />
+          <p className="mt-1.5 text-xs text-muted-foreground">{t.ofTotal.replace('{total}', totalRequirements)}</p>
         </div>
-
       </div>
     </Card>
   );

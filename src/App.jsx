@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import confetti from 'canvas-confetti';
+import { ShieldCheck } from 'lucide-react';
 import { Header } from './components/Header';
 import { TenderBanner } from './components/TenderBanner';
 import { RequirementsTable } from './components/RequirementsTable';
@@ -223,7 +223,7 @@ export default function App() {
     if (stateObj.lang) setLang(stateObj.lang);
   };
 
-  // Generate & Download Package (Task 4.7 & 4.8)
+  // Generate & download the final package
   const handleGeneratePackage = async () => {
     if (!canGenerate || isGenerating) return;
 
@@ -251,14 +251,6 @@ export default function App() {
       const outputFileName = `${tender.tender_id || 'Tender'}_Package.pdf`;
       downloadPdfBlob(pdfBytes, outputFileName);
 
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 60,
-          origin: { y: 0.8 }
-        });
-      } catch (e) {}
-
     } catch (err) {
       console.error('Package generation failed:', err);
       alert('Error generating tender package: ' + err.message);
@@ -270,7 +262,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen bg-background text-foreground pb-32 ${lang === 'bn' ? 'font-bn' : ''}`}>
+    <div className={`min-h-screen bg-background text-foreground ${lang === 'bn' ? 'font-bn' : ''}`}>
       {/* Header */}
       <Header
         lang={lang}
@@ -283,9 +275,7 @@ export default function App() {
         onLoadState={handleLoadStateFromFile}
       />
 
-      {/* Main Content Area */}
-      <main className="mx-auto max-w-[1440px] px-4 pt-6 sm:px-6">
-        {/* Tender Banner */}
+      <main className="mx-auto max-w-[1280px] px-4 pt-5 sm:px-6">
         <TenderBanner
           tender={tender}
           lang={lang}
@@ -294,9 +284,7 @@ export default function App() {
           okCount={okCount}
         />
 
-        {/* 2-Column Responsive Layout */}
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
-          {/* Left: Requirements Checklist Table */}
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section className="min-w-0">
             <RequirementsTable
               lang={lang}
@@ -309,11 +297,11 @@ export default function App() {
               onExpiryChange={handleExpiryChange}
               onUnmatch={handleUnmatch}
               onPreviewFile={(file) => setPreviewFile(file)}
+              onAutoMatch={handleAutoMatch}
             />
           </section>
 
-          {/* Right: Upload Zone & Staged Files */}
-          <aside className="lg:sticky lg:top-20">
+          <aside className="lg:sticky lg:top-[68px]">
             <UploadZone
               lang={lang}
               uploadedFiles={uploadedFiles}
@@ -323,9 +311,15 @@ export default function App() {
             />
           </aside>
         </div>
+
+        <footer className="flex items-center justify-center gap-1.5 px-4 pb-36 pt-8 text-center text-xs text-muted-foreground lg:pb-32">
+          <ShieldCheck size={13} />
+          <span className={lang === 'bn' ? 'font-bn' : ''}>
+            TenderPack · {TRANSLATIONS[lang].footerNote}
+          </span>
+        </footer>
       </main>
 
-      {/* Floating Bottom Action Dock */}
       <PackageGeneratorBar
         lang={lang}
         blockingCount={blockingCount}
@@ -336,7 +330,6 @@ export default function App() {
         includeToc={includeToc}
         setIncludeToc={setIncludeToc}
         onGeneratePackage={handleGeneratePackage}
-        onAutoMatch={handleAutoMatch}
         onExportCsv={handleExportCsv}
         onOpenSealModal={() => setIsSealModalOpen(true)}
       />

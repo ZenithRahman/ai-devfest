@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Trash2, Eye, AlertTriangle, Copy, Layers } from 'lucide-react';
+import { Upload, FileText, Trash2, Eye, AlertTriangle, Copy } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import { computeFileHash, formatBytes } from '../utils/cryptoUtils';
 import { Card } from './ui/card';
@@ -96,29 +96,25 @@ export function UploadZone({
   }
 
   return (
-    <Card className="flex h-full flex-col p-5">
-
-      {/* Title */}
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className={`flex items-center gap-2 text-sm font-bold ${lang === 'bn' ? 'font-bn text-base' : ''}`}>
-          <Layers size={16} />
-          <span>{t.uploadPanel.title}</span>
+    <Card className="flex h-full flex-col">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <h2 className={`text-sm font-semibold tracking-tight ${lang === 'bn' ? 'font-bn' : ''}`}>
+          {t.uploadPanel.title}
         </h2>
-        <span className="rounded-full border border-border bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground">
+        <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground tabular-nums">
           {uploadedFiles.length}
         </span>
       </div>
 
+      <div className="p-4">
       {/* Dropzone */}
       <div
         onDrop={handleDrop}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
-        onClick={() => fileInputRef.current?.click()}
-        className={`mb-4 cursor-pointer rounded-lg border border-dashed p-6 text-center transition-all ${
-          isDragging
-            ? 'border-primary bg-accent'
-            : 'border-border bg-muted/40 hover:border-muted-foreground/50 hover:bg-muted/70'
+        onDragEnd={() => setIsDragging(false)}
+        className={`rounded-lg border border-dashed p-5 text-center transition-colors ${
+          isDragging ? 'border-foreground bg-accent' : 'border-border bg-muted/40'
         }`}
       >
         <input
@@ -129,33 +125,35 @@ export function UploadZone({
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
-        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background">
-          <Upload size={18} />
+        <div className="mx-auto mb-2.5 flex h-9 w-9 items-center justify-center rounded-full bg-background shadow-sm ring-1 ring-border">
+          <Upload size={16} />
         </div>
-        <p className={`mb-1 text-xs font-semibold md:text-sm ${lang === 'bn' ? 'font-bn' : ''}`}>
-          {isProcessing ? 'Processing files...' : t.uploadPanel.dropPrompt}
+        <p className={`text-[13px] font-semibold ${lang === 'bn' ? 'font-bn' : ''}`}>
+          {isProcessing ? '…' : t.uploadPanel.dropPrompt}
         </p>
-        <p className={`text-[11px] text-muted-foreground ${lang === 'bn' ? 'font-bn' : ''}`}>
-          {t.uploadPanel.subPrompt}
-        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{t.uploadPanel.subPrompt}</p>
+        <Button size="sm" variant="secondary" className="mt-3" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+          {t.uploadPanel.browseBtn}
+        </Button>
       </div>
 
       {/* Error / Non-PDF Alert */}
       {errorMessage && (
-        <div className="mb-4 flex items-start gap-2.5 rounded-md border border-red-500/30 bg-red-500/10 p-3">
-          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-500" />
-          <div className="text-xs leading-relaxed text-red-600 dark:text-red-400">
+        <div className="mt-3 flex items-start gap-2 rounded-md border border-red-500/25 bg-red-500/[0.07] p-3">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0 text-red-500" />
+          <p className="text-xs leading-relaxed text-red-600 dark:text-red-400">
             {errorMessage}
-          </div>
+          </p>
         </div>
       )}
+      </div>
 
       {/* Uploaded Files List */}
-      <div className="max-h-[500px] flex-1 space-y-2 overflow-y-auto pr-1">
+      <div className="max-h-[420px] flex-1 space-y-1.5 overflow-y-auto px-4 pb-4">
         {uploadedFiles.length === 0 ? (
-          <div className={`rounded-lg border border-dashed border-border px-4 py-10 text-center text-xs text-muted-foreground ${lang === 'bn' ? 'font-bn' : ''}`}>
+          <p className={`rounded-lg bg-muted/50 px-4 py-6 text-center text-xs leading-relaxed text-muted-foreground ${lang === 'bn' ? 'font-bn' : ''}`}>
             {t.uploadPanel.noFiles}
-          </div>
+          </p>
         ) : (
           uploadedFiles.map((file) => {
             const isDuplicate = hashCount[file.hash] > 1;
@@ -163,34 +161,26 @@ export function UploadZone({
             return (
               <div
                 key={file.id}
-                className={`flex items-center justify-between gap-3 rounded-lg border p-2.5 transition-all ${
-                  isDuplicate
-                    ? 'border-purple-500/40 bg-purple-500/5'
-                    : 'border-border bg-muted/40 hover:border-muted-foreground/40'
+                className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-2 ${
+                  isDuplicate ? 'border-purple-500/40 bg-purple-500/[0.06]' : 'border-border'
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-background">
-                    <FileText size={15} />
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                    <FileText size={14} className="text-muted-foreground" />
                   </div>
                   <div className="min-w-0">
-                    <div className="max-w-[170px] truncate text-xs font-semibold" title={file.name}>
+                    <p className="truncate text-[13px] font-medium" title={file.name}>
                       {file.name}
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
-                      <span>{file.pageCount} pgs</span>
-                      <span>•</span>
-                      <span>{formatBytes(file.size)}</span>
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
+                      <span>{file.pageCount}p · {formatBytes(file.size)}</span>
                       {isDuplicate && (
-                        <>
-                          <span>•</span>
-                          <Badge variant="duplicate" className="px-1.5 py-0 text-[10px]">
-                            <Copy size={9} />
-                            <span>DUP</span>
-                          </Badge>
-                        </>
+                        <Badge variant="duplicate" className="px-1.5 py-0 text-[10px] normal-case">
+                          <Copy size={9} />{t.uploadPanel.duplicateBadge}
+                        </Badge>
                       )}
-                    </div>
+                    </p>
                   </div>
                 </div>
 

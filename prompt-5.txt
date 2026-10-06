@@ -1,0 +1,1 @@
+Redesign the UI professionally, right now it looks like AI slop. Place the buttons where they belong with proper hierarchy, create a transparent SVG logo named logo.svg, make everything fully responsive on mobile, and remove garbage texts like AI DevFest. This is a real app for real users, so make it look clean and production-ready, not AI-made.
