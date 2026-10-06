@@ -7,7 +7,8 @@ export function suggestMatches(requirements, uploadedFiles, currentMatches = {})
   const usedFileIds = new Set(Object.values(newMatches));
   let matchedCount = 0;
 
-  // Keyword dictionary for each requirement type
+  // Keyword dictionary for each requirement type (sample-pack boost).
+  // Unknown requirement IDs fall back to generic title-token scoring below.
   const matchRules = [
     { id: 'R01', keywords: ['trade', 'license', 'licence', 'ট্রেড'] },
     { id: 'R02', keywords: ['tin', 'tax', 'টিআইএন'] },
@@ -55,6 +56,37 @@ export function suggestMatches(requirements, uploadedFiles, currentMatches = {})
       }
     }
 
+    if (bestFile && bestScore > 0) {
+      newMatches[req.id] = bestFile.id;
+      usedFileIds.add(bestFile.id);
+      matchedCount++;
+    }
+  }
+
+  // Generic fallback for unseen packs: score file names against
+  // tokens from the English title (words with 4+ letters).
+  for (const req of requirements) {
+    if (newMatches[req.id]) continue;
+    if (matchRules.some((r) => r.id === req.id)) continue;
+    const tokens = (req.title_en || '')
+      .toLowerCase()
+      .split(/[^a-z0-9]+/g)
+      .filter((w) => w.length >= 4);
+    if (tokens.length === 0) continue;
+
+    let bestFile = null;
+    let bestScore = 0;
+    for (const file of uploadedFiles.filter((f) => !usedFileIds.has(f.id))) {
+      const lowerName = file.name.toLowerCase().replace(/[^a-z0-9]+/g, '');
+      let score = 0;
+      for (const tok of tokens) {
+        if (lowerName.includes(tok)) score += 10;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestFile = file;
+      }
+    }
     if (bestFile && bestScore > 0) {
       newMatches[req.id] = bestFile.id;
       usedFileIds.add(bestFile.id);

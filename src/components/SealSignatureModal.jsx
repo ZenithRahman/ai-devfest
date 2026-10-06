@@ -9,7 +9,8 @@ export function SealSignatureModal({
   lang,
   sealData,
   onSaveSeal,
-  onClose
+  onClose,
+  onNotice
 }) {
   const [imagePreview, setImagePreview] = useState(sealData.previewUrl || null);
   const [imageBytes, setImageBytes] = useState(sealData.bytes || null);
@@ -22,7 +23,7 @@ export function SealSignatureModal({
     if (!file) return;
 
     if (!file.name.toLowerCase().endsWith('.png') && file.type !== 'image/png') {
-      alert('Please upload a PNG image for seal or signature.');
+      onNotice?.(t.notice.pngOnlyTitle, t.notice.pngOnlyBody);
       return;
     }
 

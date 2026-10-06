@@ -137,55 +137,96 @@ export async function generateTenderPackage(tender, requirements, matches, uploa
   coverPage.drawText("Pages", { x: 510, y: tableY, size: 9, font: fontBold, color: rgb(0.2, 0.25, 0.35) });
 
   tableY -= 22;
+  let coverPageActive = coverPage;
+  const drawCoverRow = (order, title, fileName, pages, y) => {
+    coverPageActive.drawText(String(order), { x: 55, y, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.15) });
+    coverPageActive.drawText(title, { x: 95, y, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.15) });
+    coverPageActive.drawText(fileName, { x: 310, y, size: 8.5, font: fontRegular, color: rgb(0.3, 0.35, 0.45) });
+    coverPageActive.drawText(String(pages), { x: 515, y, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.15) });
+    coverPageActive.drawLine({
+      start: { x: 40, y: y - 4 },
+      end: { x: pageWidth - 40, y: y - 4 },
+      thickness: 0.5,
+      color: rgb(0.9, 0.9, 0.93)
+    });
+  };
   for (const item of includedDocs) {
-    if (tableY < 60) break; // stay within cover boundary
+    if (tableY < 60) {
+      // Overflow: continue the document list on a fresh page instead of dropping rows.
+      coverPageActive = mergedPdf.addPage([595.28, 841.89]);
+      coverPageActive.drawText('SCHEDULE OF INCLUDED DOCUMENTS (continued)', {
+        x: 40,
+        y: pageHeight - 70,
+        size: 12,
+        font: fontBold,
+        color: rgb(0.15, 0.18, 0.28)
+      });
+      tableY = pageHeight - 100;
+    }
 
     const titleEn = item.req.title_en || item.req.id;
     const cleanFileName = (item.fileObj.name || '').substring(0, 32);
 
-    coverPage.drawText(String(item.req.order), { x: 55, y: tableY, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.15) });
-    coverPage.drawText(titleEn, { x: 95, y: tableY, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.15) });
-    coverPage.drawText(cleanFileName, { x: 310, y: tableY, size: 8.5, font: fontRegular, color: rgb(0.3, 0.35, 0.45) });
-    coverPage.drawText(String(item.fileObj.pageCount || 1), { x: 515, y: tableY, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.15) });
-
-    // Subtle divider
-    coverPage.drawLine({
-      start: { x: 40, y: tableY - 4 },
-      end: { x: pageWidth - 40, y: tableY - 4 },
-      thickness: 0.5,
-      color: rgb(0.9, 0.9, 0.93)
-    });
+    drawCoverRow(item.req.order, titleEn, cleanFileName, item.fileObj.pageCount || 1, tableY);
 
     tableY -= 18;
   }
 
-  // --- Step 2: Index / Table of Contents Page (Optional Bonus) ---
+  // --- Step 2: Index placeholder (drawn AFTER merge with actual page numbers) ---
   let indexPage = null;
-  const docStartPages = [];
-  let currentPageTracker = 2; // Cover is page 1
-
   if (options.includeIndexPage) {
-    onProgress(30, "Generating Index & Table of Contents...");
+    onProgress(30, 'Generating Index & Table of Contents...');
     indexPage = mergedPdf.addPage([595.28, 841.89]);
-    currentPageTracker = 3; // Index is page 2, docs start at page 3
   }
-
-  // Pre-calculate document start page numbers
+  // --- Step 3: Append Document Pages in Order (Section 6.2) ---
+  // Record ACTUAL merged page counts so the index stays accurate even
+  // when a file turns out corrupt/encrypted at merge time.
+  const mergedCounts = [];
+  let docIndex = 0;
   for (const item of includedDocs) {
-    const pagesInDoc = item.fileObj.pageCount || 1;
-    docStartPages.push({
-      req: item.req,
-      fileName: item.fileObj.name,
-      pageCount: pagesInDoc,
-      startPage: currentPageTracker,
-      endPage: currentPageTracker + pagesInDoc - 1
-    });
-    currentPageTracker += pagesInDoc;
+    docIndex++;
+    const progressPct = 40 + Math.floor((docIndex / includedDocs.length) * 40);
+    onProgress(progressPct, `Merging document ${docIndex}/${includedDocs.length}: ${item.req.title_en}...`);
+
+    try {
+      const srcDoc = await PDFDocument.load(item.fileObj.arrayBuffer, { ignoreEncryption: true });
+      const copiedPages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
+      for (const page of copiedPages) {
+        mergedPdf.addPage(page);
+      }
+      mergedCounts.push(copiedPages.length);
+    } catch (err) {
+      console.error(`Error merging document ${item.fileObj.name}:`, err);
+      // Create a clear placeholder page if a PDF was corrupted
+      const fallbackPage = mergedPdf.addPage([595.28, 841.89]);
+      fallbackPage.drawText(`[Document ${item.req.title_en} could not be rendered: ${err.message}]`, {
+        x: 50,
+        y: 400,
+        size: 12,
+        font: fontRegular,
+        color: rgb(0.8, 0.1, 0.1)
+      });
+      mergedCounts.push(1);
+    }
   }
 
-  // Render Index page if requested
+  // --- Step 3b: Render Index with actual start pages ---
   if (indexPage) {
-    indexPage.drawText("TABLE OF CONTENTS / INDEX", {
+    const frontMatterCount = mergedPdf.getPageCount() - mergedCounts.reduce((a, b) => a + b, 0);
+    let cursor = frontMatterCount + 1;
+    const docStartPages = includedDocs.map((item, i) => {
+      const info = {
+        req: item.req,
+        fileName: item.fileObj.name,
+        pageCount: mergedCounts[i],
+        startPage: cursor,
+        endPage: cursor + mergedCounts[i] - 1
+      };
+      cursor += mergedCounts[i];
+      return info;
+    });
+
+    indexPage.drawText('TABLE OF CONTENTS / INDEX', {
       x: 40,
       y: pageHeight - 70,
       size: 18,
@@ -193,7 +234,7 @@ export async function generateTenderPackage(tender, requirements, matches, uploa
       color: rgb(0.09, 0.11, 0.19)
     });
 
-    indexPage.drawText("Comprehensive Document Navigation & Page Sequence", {
+    indexPage.drawText('Comprehensive Document Navigation & Page Sequence', {
       x: 40,
       y: pageHeight - 90,
       size: 10,
@@ -210,13 +251,14 @@ export async function generateTenderPackage(tender, requirements, matches, uploa
       height: 24,
       color: rgb(0.94, 0.95, 0.98)
     });
-    indexPage.drawText("Order", { x: 50, y: indexY, size: 9, font: fontBold });
-    indexPage.drawText("Document Title", { x: 95, y: indexY, size: 9, font: fontBold });
-    indexPage.drawText("File Name", { x: 300, y: indexY, size: 9, font: fontBold });
-    indexPage.drawText("Start Page", { x: 480, y: indexY, size: 9, font: fontBold });
+    indexPage.drawText('Order', { x: 50, y: indexY, size: 9, font: fontBold });
+    indexPage.drawText('Document Title', { x: 95, y: indexY, size: 9, font: fontBold });
+    indexPage.drawText('File Name', { x: 300, y: indexY, size: 9, font: fontBold });
+    indexPage.drawText('Start Page', { x: 480, y: indexY, size: 9, font: fontBold });
 
     indexY -= 24;
     for (const info of docStartPages) {
+      if (indexY < 60) break;
       indexPage.drawText(String(info.req.order), { x: 55, y: indexY, size: 9, font: fontRegular });
       indexPage.drawText(info.req.title_en || info.req.id, { x: 95, y: indexY, size: 9, font: fontRegular });
       indexPage.drawText(info.fileName.substring(0, 30), { x: 300, y: indexY, size: 8.5, font: fontRegular, color: rgb(0.3, 0.35, 0.45) });
@@ -229,33 +271,6 @@ export async function generateTenderPackage(tender, requirements, matches, uploa
         color: rgb(0.9, 0.9, 0.93)
       });
       indexY -= 20;
-    }
-  }
-
-  // --- Step 3: Append Document Pages in Order (Section 6.2) ---
-  let docIndex = 0;
-  for (const item of includedDocs) {
-    docIndex++;
-    const progressPct = 40 + Math.floor((docIndex / includedDocs.length) * 40);
-    onProgress(progressPct, `Merging document ${docIndex}/${includedDocs.length}: ${item.req.title_en}...`);
-
-    try {
-      const srcDoc = await PDFDocument.load(item.fileObj.arrayBuffer, { ignoreEncryption: true });
-      const copiedPages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
-      for (const page of copiedPages) {
-        mergedPdf.addPage(page);
-      }
-    } catch (err) {
-      console.error(`Error merging document ${item.fileObj.name}:`, err);
-      // Create a clear placeholder page if a PDF was corrupted
-      const fallbackPage = mergedPdf.addPage([595.28, 841.89]);
-      fallbackPage.drawText(`[Document ${item.req.title_en} could not be rendered: ${err.message}]`, {
-        x: 50,
-        y: 400,
-        size: 12,
-        font: fontRegular,
-        color: rgb(0.8, 0.1, 0.1)
-      });
     }
   }
 
@@ -280,24 +295,24 @@ export async function generateTenderPackage(tender, requirements, matches, uploa
 
     // Footer text: <tender_id> | Page X of Y
     const footerText = `${tenderId}  |  Page ${pageNum} of ${totalPages}`;
-    const textWidth = fontRegular.widthOfTextAtSize(footerText, 8.5);
+    const textWidth = fontRegular.widthOfTextAtSize(footerText, 8);
 
-    // Section 6.4: "The footer must be easy to read and must not cover the document's content."
-    // Draw a subtle translucent backing line at y = 24 to guarantee legibility
+    // Section 6.4: keep the footer legible but minimal so it never
+    // covers source content — a slim 12pt strip at the very bottom.
     page.drawRectangle({
       x: 30,
-      y: 12,
+      y: 10,
       width: pWidth - 60,
-      height: 18,
+      height: 13,
       color: rgb(1, 1, 1),
-      opacity: 0.85
+      opacity: 0.75
     });
 
     // Draw footer text centered at the bottom
     page.drawText(footerText, {
       x: (pWidth - textWidth) / 2,
-      y: 17,
-      size: 8.5,
+      y: 14,
+      size: 8,
       font: fontRegular,
       color: rgb(0.35, 0.4, 0.48)
     });

@@ -30,7 +30,8 @@ export function Header({
   onLoadRequirementsJson,
   onResetSample,
   onSaveState,
-  onLoadState
+  onLoadState,
+  onNotice
 }) {
   const jsonInputRef = useRef(null);
   const stateInputRef = useRef(null);
@@ -38,6 +39,12 @@ export function Header({
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useDismiss(() => setMenuOpen(false));
   const t = TRANSLATIONS[lang];
+
+  const failJson = (err) =>
+    onNotice?.(
+      TRANSLATIONS[lang].notice.invalidJsonTitle,
+      TRANSLATIONS[lang].notice.invalidJsonBody.replace('{error}', err.message)
+    );
 
   const handleJsonUpload = (e) => {
     const file = e.target.files?.[0];
@@ -48,7 +55,7 @@ export function Header({
           const parsed = JSON.parse(event.target.result);
           onLoadRequirementsJson(parsed);
         } catch (err) {
-          alert('Invalid JSON file format: ' + err.message);
+          failJson(err);
         }
       };
       reader.readAsText(file);
@@ -67,7 +74,10 @@ export function Header({
           const parsed = JSON.parse(event.target.result);
           onLoadState(parsed);
         } catch (err) {
-          alert('Failed to parse project state: ' + err.message);
+          onNotice?.(
+            TRANSLATIONS[lang].notice.stateErrorTitle,
+            TRANSLATIONS[lang].notice.stateErrorBody.replace('{error}', err.message)
+          );
         }
       };
       reader.readAsText(file);

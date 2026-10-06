@@ -9,6 +9,7 @@ import { PDFPreviewModal } from './components/PDFPreviewModal';
 import { SealSignatureModal } from './components/SealSignatureModal';
 
 import { DEFAULT_TENDER_DATA } from './constants/defaultTender';
+import { NoticeDialog } from './components/ui/notice-dialog';
 import { TRANSLATIONS } from './constants/translations';
 import { evaluateAllStatuses, STATUS } from './utils/statusEngine';
 import { generateTenderPackage, downloadPdfBlob } from './utils/pdfGenerator';
@@ -42,6 +43,9 @@ export default function App() {
   const [previewFile, setPreviewFile] = useState(null);
   const [isSealModalOpen, setIsSealModalOpen] = useState(false);
   const [sealData, setSealData] = useState({ bytes: null, previewUrl: null, targetPages: 'all' });
+  const [notice, setNotice] = useState({ open: false, title: '', message: '' });
+
+  const showNotice = (title, message = '') => setNotice({ open: true, title, message });
 
   // Theme: toggle `dark` class + persist
   useEffect(() => {
@@ -51,7 +55,9 @@ export default function App() {
     } catch {}
   }, [theme]);
 
-  // Auto-load state from localStorage on first mount if available
+  // Auto-load state from localStorage on first mount if available.
+  // Note: uploaded files can't persist (ArrayBuffers), so any restored
+  // matches would be phantom — drop them and keep tender/requirements.
   useEffect(() => {
     try {
       const saved = localStorage.getItem('tender_builder_state');
@@ -59,14 +65,30 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (parsed.tender) setTender(parsed.tender);
         if (parsed.requirements) setRequirements(parsed.requirements);
-        if (parsed.matches) setMatches(parsed.matches);
         if (parsed.expiryDates) setExpiryDates(parsed.expiryDates);
         if (parsed.lang) setLang(parsed.lang);
+        setMatches({});
       }
     } catch (e) {
       console.warn('LocalStorage restore error:', e);
     }
   }, []);
+
+  // Safety net: prune matches that reference files which no longer exist.
+  useEffect(() => {
+    setMatches((prev) => {
+      const ids = new Set(uploadedFiles.map((f) => f.id));
+      const next = { ...prev };
+      let changed = false;
+      for (const [reqId, fileId] of Object.entries(next)) {
+        if (!ids.has(fileId)) {
+          delete next[reqId];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [uploadedFiles]);
 
   // Save lightweight state to localStorage
   useEffect(() => {
@@ -94,17 +116,17 @@ export default function App() {
     );
   }, [requirements, matches, expiryDates, tender.submission_deadline, uploadedFiles]);
 
-  const { itemStatuses, blockingCount, canGenerate } = statusAnalysis;
+  const { itemStatuses, blockingCount, canGenerate, duplicateMatchViolations } = statusAnalysis;
 
   // Calculate OK count for dashboard
   const okCount = useMemo(() => {
     return Object.values(itemStatuses).filter(s => s.status === STATUS.OK).length;
   }, [itemStatuses]);
 
-  // Handle uploading custom requirements.json (Task 4.1)
+  // Handle uploading custom requirements.json
   const handleLoadRequirementsJson = (data) => {
     if (!data.tender || !Array.isArray(data.requirements)) {
-      alert('Invalid requirements.json format. Must include "tender" and "requirements" fields.');
+      showNotice(TRANSLATIONS[lang].notice.invalidFileTitle, TRANSLATIONS[lang].notice.invalidFileBody);
       return;
     }
     setTender(data.tender);
@@ -169,14 +191,17 @@ export default function App() {
     }));
   };
 
-  // Auto-Match Bonus Feature
+  // Auto-match from file names
   const handleAutoMatch = () => {
     const { newMatches, matchedCount } = suggestMatches(requirements, uploadedFiles, matches);
     setMatches(newMatches);
     if (matchedCount > 0) {
-      alert(TRANSLATIONS[lang].matching.autoMatchSuccess.replace('{count}', matchedCount));
+      showNotice(
+        TRANSLATIONS[lang].matching.autoMatchTitle,
+        TRANSLATIONS[lang].matching.autoMatchSuccess.replace('{count}', matchedCount)
+      );
     } else {
-      alert('No new automatic matches found based on file names.');
+      showNotice(TRANSLATIONS[lang].matching.autoMatchTitle, TRANSLATIONS[lang].matching.autoMatchEmpty);
     }
   };
 
@@ -214,7 +239,8 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
 
-  // Load project state from JSON
+  // Load project state from JSON (matches are re-validated by the
+  // prune effect since file binaries aren't part of the saved file)
   const handleLoadStateFromFile = (stateObj) => {
     if (stateObj.tender) setTender(stateObj.tender);
     if (stateObj.requirements) setRequirements(stateObj.requirements);
@@ -253,7 +279,10 @@ export default function App() {
 
     } catch (err) {
       console.error('Package generation failed:', err);
-      alert('Error generating tender package: ' + err.message);
+      showNotice(
+        TRANSLATIONS[lang].notice.generateErrorTitle,
+        TRANSLATIONS[lang].notice.generateErrorBody.replace('{error}', err.message)
+      );
     } finally {
       setIsGenerating(false);
       setProgress(0);
@@ -273,6 +302,7 @@ export default function App() {
         onResetSample={handleResetSample}
         onSaveState={handleSaveStateToFile}
         onLoadState={handleLoadStateFromFile}
+        onNotice={showNotice}
       />
 
       <main className="mx-auto max-w-[1280px] px-4 pt-5 sm:px-6">
@@ -332,10 +362,12 @@ export default function App() {
         onGeneratePackage={handleGeneratePackage}
         onExportCsv={handleExportCsv}
         onOpenSealModal={() => setIsSealModalOpen(true)}
+        hasDuplicateViolation={(duplicateMatchViolations?.length || 0) > 0}
       />
 
       {/* PDF In-App Preview Modal */}
       <PDFPreviewModal
+        lang={lang}
         file={previewFile}
         onClose={() => setPreviewFile(null)}
       />
@@ -347,6 +379,15 @@ export default function App() {
         sealData={sealData}
         onSaveSeal={(data) => setSealData(data)}
         onClose={() => setIsSealModalOpen(false)}
+        onNotice={showNotice}
+      />
+
+      <NoticeDialog
+        open={notice.open}
+        title={notice.title}
+        message={notice.message}
+        actionLabel={TRANSLATIONS[lang].notice.ok}
+        onClose={() => setNotice((n) => ({ ...n, open: false }))}
       />
     </div>
   );

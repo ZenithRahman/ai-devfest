@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { ExternalLink, FileText } from 'lucide-react';
 import { Dialog, DialogClose } from './ui/dialog';
+import { TRANSLATIONS } from '../constants/translations';
 
-export function PDFPreviewModal({ file, onClose }) {
+export function PDFPreviewModal({ lang = 'en', file, onClose }) {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   const [blobUrl, setBlobUrl] = useState(null);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function PDFPreviewModal({ file, onClose }) {
                   {file.name}
                 </div>
                 <div className="font-mono text-xs text-muted-foreground">
-                  {file.pageCount} pages • Document Preview
+                  {t.previewModal.subtitle.replace('{count}', file.pageCount)}
                 </div>
               </div>
             </div>
@@ -44,7 +46,7 @@ export function PDFPreviewModal({ file, onClose }) {
                   className="inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-3 py-1.5 text-xs transition-colors hover:bg-accent"
                 >
                   <ExternalLink size={13} />
-                  <span>New Tab</span>
+                  <span>{t.previewModal.openNewTab}</span>
                 </a>
               )}
               <DialogClose onClose={onClose} />
@@ -60,7 +62,7 @@ export function PDFPreviewModal({ file, onClose }) {
               />
             ) : (
               <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                Loading preview...
+                {t.previewModal.loading}
               </div>
             )}
           </div>

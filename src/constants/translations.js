@@ -57,6 +57,8 @@ export const TRANSLATIONS = {
       browseBtn: "Browse files",
       subPrompt: "PDF only · up to 30 files · 50 MB",
       nonPdfError: "Only PDF files are accepted here.",
+      limitError: "Limit reached: up to 30 files and 50 MB total. Skipped: {names}",
+      processing: "Reading files…",
       pages: "pages",
       duplicateBadge: "Duplicate",
       remove: "Remove",
@@ -64,11 +66,19 @@ export const TRANSLATIONS = {
       preview: "Preview",
       noFiles: "No files yet. Drop PDFs here or browse to attach them to the checklist."
     },
+    previewModal: {
+      subtitle: "{count} pages · Document preview",
+      openNewTab: "New tab",
+      loading: "Loading preview…"
+    },
     matching: {
       selectPlaceholder: "Select file…",
       autoMatchBtn: "Auto-match",
+      autoMatchTitle: "Auto-match finished",
       autoMatchSuccess: "Matched {count} documents by file name.",
-      duplicateWarning: "This file is already used for another document."
+      autoMatchEmpty: "No new matches found from file names.",
+      duplicateWarning: "This file is already used for another document.",
+      duplicateBlockDetail: "Same content attached to 2 documents — keep only one."
     },
     packageBar: {
       generateBtn: "Generate package",
@@ -90,7 +100,20 @@ export const TRANSLATIONS = {
       close: "Done"
     },
     tocOption: "Contents page",
-    footerNote: "Files never leave your browser."
+    footerNote: "Files never leave your browser.",
+    notice: {
+      ok: "Got it",
+      invalidFileTitle: "Can't open that file",
+      invalidFileBody: "This doesn't look like a valid tender file. It must include tender details and a requirements list.",
+      invalidJsonTitle: "Invalid JSON file",
+      invalidJsonBody: "Couldn't parse that file: {error}",
+      stateErrorTitle: "Couldn't reopen workspace",
+      stateErrorBody: "Couldn't parse that project file: {error}",
+      pngOnlyTitle: "PNG only",
+      pngOnlyBody: "Please upload a transparent PNG for the seal or signature.",
+      generateErrorTitle: "Couldn't build the package",
+      generateErrorBody: "{error}"
+    }
   },
   bn: {
     appTitle: "TenderPack",
@@ -150,6 +173,8 @@ export const TRANSLATIONS = {
       browseBtn: "ফাইল বেছে নিন",
       subPrompt: "শুধু PDF · সর্বোচ্চ ৩০টি · ৫০ MB",
       nonPdfError: "এখানে শুধু PDF ফাইল দেওয়া যাবে।",
+      limitError: "সীমা পূর্ণ: সর্বোচ্চ ৩০টি ফাইল ও ৫০ MB। বাদ পড়েছে: {names}",
+      processing: "ফাইল পড়া হচ্ছে…",
       pages: "পৃষ্ঠা",
       duplicateBadge: "ডুপ্লিকেট",
       remove: "মুছুন",
@@ -157,11 +182,19 @@ export const TRANSLATIONS = {
       preview: "দেখুন",
       noFiles: "এখনও ফাইল নেই। PDF এখানে রাখুন বা বেছে নিন।"
     },
+    previewModal: {
+      subtitle: "{count} পৃষ্ঠা · প্রিভিউ",
+      openNewTab: "নতুন ট্যাবে",
+      loading: "প্রিভিউ লোড হচ্ছে…"
+    },
     matching: {
       selectPlaceholder: "ফাইল বেছে নিন…",
       autoMatchBtn: "স্বয়ংক্রিয় মিল",
+      autoMatchTitle: "স্বয়ংক্রিয় মিল শেষ",
       autoMatchSuccess: "ফাইলের নাম দেখে {count}টি নথি মিলেছে।",
-      duplicateWarning: "এই ফাইলটি অন্য নথিতে ব্যবহার হয়েছে।"
+      autoMatchEmpty: "ফাইলের নাম থেকে নতুন কোনো মিল পাওয়া যায়নি।",
+      duplicateWarning: "এই ফাইলটি অন্য নথিতে ব্যবহার হয়েছে।",
+      duplicateBlockDetail: "একই ফাইল ২টি নথিতে আছে — একটি রাখুন।"
     },
     packageBar: {
       generateBtn: "প্যাকেজ তৈরি করুন",
@@ -183,6 +216,19 @@ export const TRANSLATIONS = {
       close: "সম্পন্ন"
     },
     tocOption: "সূচিপত্র",
-    footerNote: "ফাইল আপনার ব্রাউজারের বাইরে যায় না।"
+    footerNote: "ফাইল আপনার ব্রাউজারের বাইরে যায় না।",
+    notice: {
+      ok: "ঠিক আছে",
+      invalidFileTitle: "ফাইল খোলা যাচ্ছে না",
+      invalidFileBody: "এটি বৈধ টেন্ডার ফাইল মনে হচ্ছে না। এতে টেন্ডারের তথ্য ও নথির তালিকা থাকতে হবে।",
+      invalidJsonTitle: "ভুল JSON ফাইল",
+      invalidJsonBody: "ফাইলটি পড়া যায়নি: {error}",
+      stateErrorTitle: "কাজ খোলা যায়নি",
+      stateErrorBody: "প্রজেক্ট ফাইলটি পড়া যায়নি: {error}",
+      pngOnlyTitle: "শুধু PNG",
+      pngOnlyBody: "সিল বা স্বাক্ষরের জন্য স্বচ্ছ PNG আপলোড করুন।",
+      generateErrorTitle: "প্যাকেজ তৈরি হয়নি",
+      generateErrorBody: "{error}"
+    }
   }
 };

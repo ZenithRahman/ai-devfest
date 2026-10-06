@@ -15,7 +15,8 @@ export function PackageGeneratorBar({
   setIncludeToc,
   onGeneratePackage,
   onExportCsv,
-  onOpenSealModal
+  onOpenSealModal,
+  hasDuplicateViolation = false
 }) {
   const t = TRANSLATIONS[lang];
 
@@ -51,9 +52,16 @@ export function PackageGeneratorBar({
               <CheckCircle2 size={13} />{t.readyToGenerate}
             </p>
           ) : (
-            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <AlertCircle size={13} />{t.packageBar.blockingWarning.replace('{count}', blockingCount)}
-            </p>
+            <div className="flex flex-col gap-0.5">
+              <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <AlertCircle size={13} />{t.packageBar.blockingWarning.replace('{count}', blockingCount)}
+              </p>
+              {hasDuplicateViolation && (
+                <p className="text-[11px] text-purple-600 dark:text-purple-400">
+                  {t.matching.duplicateBlockDetail}
+                </p>
+              )}
+            </div>
           )}
           <Button
             size="default"

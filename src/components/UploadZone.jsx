@@ -7,6 +7,9 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { TRANSLATIONS } from '../constants/translations';
 
+const MAX_FILES = 30;
+const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+
 export function UploadZone({
   lang,
   uploadedFiles,
@@ -27,6 +30,11 @@ export function UploadZone({
 
     const validNewFiles = [];
     const rejectedFileNames = [];
+    const skippedByLimit = [];
+
+    const existingTotal = uploadedFiles.reduce((sum, f) => sum + (f.size || 0), 0);
+    let runningTotal = existingTotal;
+    let runningCount = uploadedFiles.length;
 
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
@@ -36,6 +44,11 @@ export function UploadZone({
 
       if (!isPdfByName && !isPdfByType) {
         rejectedFileNames.push(file.name);
+        continue;
+      }
+
+      if (runningCount + 1 > MAX_FILES || runningTotal + file.size > MAX_TOTAL_BYTES) {
+        skippedByLimit.push(file.name);
         continue;
       }
 
@@ -62,16 +75,23 @@ export function UploadZone({
           arrayBuffer,
           fileObject: file
         });
+        runningCount += 1;
+        runningTotal += file.size;
       } catch (err) {
         console.error(`Failed to process file ${file.name}:`, err);
         rejectedFileNames.push(`${file.name} (Corrupted)`);
       }
     }
 
+    const messages = [];
     if (rejectedFileNames.length > 0) {
-      setErrorMessage(
-        `${t.uploadPanel.nonPdfError} Rejected files: ${rejectedFileNames.join(', ')}`
-      );
+      messages.push(`${t.uploadPanel.nonPdfError} Rejected files: ${rejectedFileNames.join(', ')}`);
+    }
+    if (skippedByLimit.length > 0) {
+      messages.push(t.uploadPanel.limitError.replace('{names}', skippedByLimit.join(', ')));
+    }
+    if (messages.length > 0) {
+      setErrorMessage(messages.join(' '));
     }
 
     if (validNewFiles.length > 0) {
@@ -129,7 +149,7 @@ export function UploadZone({
           <Upload size={16} />
         </div>
         <p className={`text-[13px] font-semibold ${lang === 'bn' ? 'font-bn' : ''}`}>
-          {isProcessing ? '…' : t.uploadPanel.dropPrompt}
+          {isProcessing ? t.uploadPanel.processing : t.uploadPanel.dropPrompt}
         </p>
         <p className="mt-0.5 text-xs text-muted-foreground">{t.uploadPanel.subPrompt}</p>
         <Button size="sm" variant="secondary" className="mt-3" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
